@@ -80,6 +80,11 @@ To change the performance thresholds (NFRs) for your API tests:
 
 You can also adjust the load profile (number of users, ramp-up time, etc.) in the `injectOpen` section of the simulation file.
 
+## Author
+
+**Tyrell Perera**  
+🌐 Website: [tyrell.co](https://tyrell.co)
+
 ## Open Source & License
 
 This project is released under the MIT License. See the included `LICENSE` file for details.
