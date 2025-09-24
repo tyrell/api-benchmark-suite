@@ -1,0 +1,37 @@
+# General
+*.log
+*.tmp
+*.swp
+.DS_Store
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.env
+venv/
+
+# Gatling/Maven
+/gatling-maven/target/
+/gatling-maven/.idea/
+/gatling-maven/.classpath
+/gatling-maven/.project
+/gatling-maven/.settings/
+
+# VS Code
+.vscode/
+
+# Sensitive files
+.env
+*.env
+secrets.*
+
+# OS generated
+Thumbs.db
+
+# Node
+node_modules/
+
+# Git
+.git/
