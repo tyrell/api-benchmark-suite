@@ -18,6 +18,8 @@ venv/
 /gatling-maven/.classpath
 /gatling-maven/.project
 /gatling-maven/.settings/
+example-report/
+**/gatling-results/
 
 # VS Code
 .vscode/
