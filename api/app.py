@@ -46,10 +46,6 @@ def require_auth(required_scopes=None):
             try:
                 payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
                 
-                # Check if token is expired
-                if payload.get('exp', 0) < datetime.datetime.utcnow().timestamp():
-                    return jsonify({"error": "Token expired"}), 401
-                
                 # Check scopes if required
                 if required_scopes:
                     token_scopes = payload.get('scopes', [])
@@ -59,6 +55,8 @@ def require_auth(required_scopes=None):
                 # Add token info to request context
                 request.token_info = payload
                 
+            except jwt.ExpiredSignatureError:
+                return jsonify({"error": "Token expired"}), 401
             except jwt.InvalidTokenError:
                 return jsonify({"error": "Invalid token"}), 401
             
@@ -122,11 +120,10 @@ def get_token():
         granted_scopes = allowed_scopes  # Grant all allowed scopes
     
     # Generate JWT token
-    now = datetime.datetime.utcnow()
+    now = datetime.datetime.now(datetime.timezone.utc)
     payload = {
         'iss': 'api-benchmark-suite',  # issuer
         'sub': client_id,              # subject (client)
-        'aud': 'api',                  # audience
         'iat': int(now.timestamp()),   # issued at
         'exp': int((now + datetime.timedelta(hours=1)).timestamp()),  # expires in 1 hour
         'scopes': granted_scopes,
