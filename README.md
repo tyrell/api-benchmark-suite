@@ -202,14 +202,101 @@ curl -H "Authorization: Bearer YOUR_TOKEN_HERE" \
 - **Client Credentials Grant** - Service-to-service authentication
 - **Password Grant** - User credential-based authentication  
 
+### Core Components
+
+#### 1. OAuth Configuration (`OAuthConfig.java`)
+- **Builder pattern** for easy configuration
+- **Environment-based** configuration loading
+- Support for multiple OAuth grant types
+- Configurable token caching and refresh settings
+
+#### 2. OAuth Token Manager (`OAuthTokenManager.java`)
+- **Smart token caching** to avoid unnecessary requests
+- **Automatic token refresh** before expiration
+- **Thread-safe** token management for concurrent testing
+- **Comprehensive error handling** for network and auth failures
+
+#### 3. Enhanced Simulations
+- `ApiBenchmarkSimulationWithOAuth.java` - Mixed public/protected endpoint testing
+- `OAuthComprehensiveSimulation.java` - Advanced multi-scenario OAuth testing
+
 ### Features
 - ✅ **Smart Token Caching** - Tokens cached and reused across requests
-- ✅ **Automatic Refresh** - Tokens refreshed before expiration  
+- ✅ **Automatic Refresh** - Tokens refreshed before expiration (default: 300s buffer)
 - ✅ **Thread-Safe** - Safe for concurrent load testing
 - ✅ **JWT Support** - Full JWT token validation
 - ✅ **Scope-based Authorization** - Fine-grained permission testing
 - ✅ **Multiple Client Support** - Test different client configurations
 - ✅ **Configurable Timeouts** - OAuth request timeout handling
+- ✅ **Performance Optimized** - Minimal OAuth server load during testing
+
+### Advanced Configuration Options
+
+The `oauth-config.properties` file supports additional advanced settings:
+
+```properties
+# Basic Configuration
+oauth.enabled=true
+oauth.tokenUrl=http://localhost:5050/oauth/token
+oauth.clientId=demo-client-id
+oauth.clientSecret=demo-client-secret
+oauth.grantType=client_credentials
+oauth.scope=api:read api:write
+
+# Advanced Token Management
+oauth.tokenCache.enabled=true
+oauth.tokenCache.refreshThresholdSeconds=300
+oauth.request.timeout=5000
+
+# Performance Tuning
+oauth.connection.poolSize=10
+oauth.connection.maxIdleTime=30000
+```
+
+### Token Acquisition Flow
+1. **Check Cache** - Verify if cached token exists and is valid
+2. **Request New Token** - If no valid token, request from OAuth server
+3. **Cache Token** - Store token with expiration information
+4. **Return Token** - Provide token for API requests
+5. **Auto-Refresh** - Refresh token before expiration threshold
+
+### Error Handling & Troubleshooting
+
+| Issue | Symptoms | Solution |
+|-------|----------|----------|
+| **OAuth Configuration Not Found** | `FileNotFoundException` | Ensure `oauth-config.properties` exists in `src/test/resources/` |
+| **Invalid Client Credentials** | `401 Unauthorized` | Verify `oauth.clientId` and `oauth.clientSecret` |
+| **Token Request Timeout** | `SocketTimeoutException` | Check network connectivity and increase `oauth.request.timeout` |
+| **Performance Issues** | Slow test execution | Enable token caching: `oauth.tokenCache.enabled=true` |
+| **Concurrent Access Issues** | Token refresh conflicts | TokenManager is thread-safe, check OAuth server capacity |
+
+### Debug Configuration
+Enable detailed OAuth logging in `logback-test.xml`:
+```xml
+<logger name="co.tyrell.gatling.auth" level="DEBUG"/>
+<logger name="co.tyrell.gatling.auth.OAuthTokenManager" level="TRACE"/>
+```
+
+### Integration Example
+
+Basic OAuth integration in Gatling scenarios:
+
+```java
+// OAuth-enabled scenario example
+ScenarioBuilder oauthScenario = scenario("OAuth API Test")
+    .exec(session -> {
+        if (oauthConfig.isEnabled()) {
+            String token = tokenManager.getValidToken();
+            return session.set("authToken", token);
+        }
+        return session;
+    })
+    .exec(http("Protected API Request")
+        .get("/api/protected-endpoint")
+        .header("Authorization", "Bearer #{authToken}")
+        .check(status().is(200))
+    );
+```
 
 ## 📊 Results & Reports
 
@@ -249,11 +336,11 @@ curl -X POST http://localhost:5050/oauth/token \
 | `demo-client-id` | `demo-client-secret` | Full access (read/write/admin) |
 | `test-client` | `test-secret` | Read-only access |
 
-## 📚 Additional Documentation
+## 📚 Additional Resources
 
-- **[OAUTH_README.md](OAUTH_README.md)** - Comprehensive OAuth implementation guide
-- **[OAuth API Testing Guide](scripts/test-oauth-api.sh)** - Manual OAuth API testing  
-- **[Performance Test Scripts](scripts/)** - Ready-to-use testing scripts
+- **[OAuth API Testing Guide](scripts/test-oauth-api.sh)** - Manual OAuth API testing examples
+- **[Performance Test Scripts](scripts/)** - Ready-to-use testing scripts for different scenarios
+- **[Gatling Documentation](https://gatling.io/docs/)** - Official Gatling performance testing guide
 
 ## 🤝 Contributing
 
