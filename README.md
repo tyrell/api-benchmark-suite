@@ -6,15 +6,11 @@ This project benchmarks REST API endpoints against NFRs using Gatling (Maven plu
 ## 🚀 Key Features
 
 - **High-Performance Load Testing** with Gatling
-- **OAuth 2.0 Authentication Support** (Client Credentials & Passw## 🚀 Quick Reference
+- **OAuth 2.0 Authentication Support** (Client Credentials & PasYou can also adjust the load profile (number of users, ramp-up time, etc.) in the `injectOpen` section of the simulation file.
 
-### Essential C## 📚 Additional Documentationmmands
+## 🚀 Quick Reference
 
-**Start OAuth Test API Server:**
-```bash
-cd api
-.venv/bin/python app.py
-```)
+### Essential Commands flows)
 - **Configurable NFR Assertions** for enterprise-grade testing
 - **Sample OAuth-enabled API** for end-to-end testing
 - **Docker-ready test environment**
@@ -310,8 +306,8 @@ You can also adjust the load profile (number of users, ramp-up time, etc.) in th
 
 **Start OAuth Test API Server:**
 ```bash
-cd /Users/tyrell/Development/git/api-benchmark-suite/api
-/Users/tyrell/Development/git/api-benchmark-suite/.venv/bin/python app.py
+cd api
+.venv/bin/python app.py
 ```
 
 **Run OAuth Performance Tests:**
