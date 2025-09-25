@@ -11,6 +11,7 @@ __pycache__/
 *.pyd
 .env
 venv/
+.venv/
 
 # Gatling/Maven
 /gatling-maven/target/
