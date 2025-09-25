@@ -71,13 +71,23 @@ def require_auth(required_scopes=None):
 def get_token():
     """OAuth2 Client Credentials Grant"""
     
-    # Get client credentials
-    client_id = request.form.get('client_id') or request.json.get('client_id') if request.json else None
-    client_secret = request.form.get('client_secret') or request.json.get('client_secret') if request.json else None
-    grant_type = request.form.get('grant_type') or request.json.get('grant_type') if request.json else None
-    scope = request.form.get('scope', '') or request.json.get('scope', '') if request.json else ''
+    # Handle both JSON and form data according to OAuth 2.0 spec
+    if request.is_json:
+        # JSON request
+        data = request.json
+        client_id = data.get('client_id')
+        client_secret = data.get('client_secret')
+        grant_type = data.get('grant_type')
+        scope = data.get('scope', '')
+    else:
+        # Form data request (standard OAuth 2.0)
+        client_id = request.form.get('client_id')
+        client_secret = request.form.get('client_secret')
+        grant_type = request.form.get('grant_type')
+        scope = request.form.get('scope', '')
     
     logger.info(f"Token request: client_id={client_id}, grant_type={grant_type}, scope={scope}")
+    logger.info(f"Request content type: {request.content_type}")
     
     # Validate grant type
     if grant_type != 'client_credentials':
