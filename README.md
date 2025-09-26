@@ -214,6 +214,32 @@ mvn gatling:test \
 ./scripts/test-oauth-api.sh
 ```
 
+### Snapshot-based Fast Reset Orchestrator
+```bash
+# Reset (Aurora/RDS/EBS/EKS) -> run Gatling -> cleanup
+./scripts/run-gatling-with-aws-reset.sh --method aurora \
+  -- -- -Dgatling.users=50 -Dperformance.success.rate.threshold=95.0
+
+# RDS restore example (region + snapshot)
+./scripts/run-gatling-with-aws-reset.sh --method rds \
+  --snapshot-id customer-api-baseline --region us-east-1 \
+  -- -- -Dgatling.users=100
+
+# EKS VolumeSnapshot -> PVC example
+./scripts/run-gatling-with-aws-reset.sh --method eks \
+  --namespace perf --snapshot-name customer-api-baseline \
+  --pvc-name customer-api-pvc-restore --size 200Gi \
+  -- -- -Dgatling.users=50
+```
+
+The orchestrator uses `scripts/aws-reset-db.sh` under the hood to:
+- Provision a fast reset environment (Aurora clone, RDS restore, EBS volumes, or EKS PVC)
+- Export the endpoint as `RESET_DB_ENDPOINT` when available
+- Execute Gatling (default: ApiBenchmarkSimulationWithOAuth)
+- Automatically clean up created resources
+
+See detailed guidance in [Fast DB Reset via AWS Snapshots](docs/FAST_DB_RESET_SNAPSHOT.md).
+
 ## 🎯 Example Test Commands
 
 ### Quick Validation Tests
@@ -359,6 +385,58 @@ The test server provides a complete Customer API v3.0.0 simulation:
 - **Steady-State Testing**: Sustained load validation  
 - **Multi-Scenario Testing**: Concurrent load patterns
 - **Endpoint-Specific Assertions**: Targeted NFR validation
+
+## ⚡ Fast Reset Strategy (AWS-first)
+
+The suite supports pre-test environment resets using storage-level snapshots for near O(1) resets with large datasets.
+
+ASCII high-level flow:
+
+```
+  +-----------------+         +---------------------+
+  |  Golden Source  |         |   Performance Run   |
+  |  (Snapshot/ARN) |         |    (Gatling Java)   |
+  +--------+--------+         +-----------+---------+
+     |                              |
+     | aws-reset-db.sh              |
+     v                              |
+      +----------+-----------+                  |
+      |  Reset Provisioning |                  |
+      |  (pick one method)  |                  |
+      +----------+-----------+                  |
+     |                              |
+     +-----------+-----------+                  |
+     |  Aurora Clone (COW)  |<-- optional -->   |
+     |  RDS Snapshot Restore|<-- methods -->    |
+     |  EBS Vols from Snaps |                  |
+     |  EKS PVC via VSnap   |                  |
+     +-----------+-----------+                  |
+     |                              |
+     v                              v
+   +-------+-------------------------------+------+
+   |   Reset Endpoint / Volumes ready (JSON out) |
+   +-------+-------------------------------+------+
+     |                              |
+     | run-gatling-with-aws-reset.sh|
+     v                              |
+  +--------+--------+                      |
+  |  Export endpoint |                      |
+  | RESET_DB_ENDPOINT|                      |
+  +--------+--------+                      |
+     |                              |
+     v                              v
+    +------+-------------------------------+------+
+    |             Gatling Execution               |
+    +------+-------------------------------+------+
+     |                              |
+     v                              |
+      Cleanup created resources <-----------
+```
+
+Quick tips:
+- Prefer Aurora cluster clones for fastest copy-on-write resets when on Aurora.
+- Use Route 53 or RDS Proxy to decouple endpoint flips if needed.
+- For EKS, ensure EBS CSI and VolumeSnapshot CRDs are installed and ready.
 
 ## 🐛 Troubleshooting
 
