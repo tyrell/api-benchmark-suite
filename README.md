@@ -25,15 +25,30 @@ A comprehensive performance testing suite demonstrating enterprise-grade load te
 api-benchmark-suite/
 ├── api/                                       # Python Flask test server
 │   ├── app.py                                 # Customer API v3.0.0 mock server
-│   └── requirements.txt                       # Python dependencies
+│   ├── requirements.txt                       # Python dependencies
+│   └── run-api.sh                             # API server startup script
+├── docs/                                      # Project documentation
+│   └── TEAM_QUICK_START.md                    # Team onboarding guide
 ├── gatling-maven/                             # Gatling performance tests
-│   ├── src/test/java/                         # Java test simulations
-│   │   ├── simulation/                        # Performance test scenarios
-│   │   └── auth/                              # OAuth 2.0 implementation
-│   └── src/test/resources/                    # Configuration files
-│       └── gatling-simulation.properties
-├── scripts/                                   # Automation scripts
-└── docs/                                      # Documentation
+│   ├── pom.xml                                # Maven project configuration
+│   ├── src/test/java/co/tyrell/gatling/       # Java test implementations
+│   │   ├── auth/                              # OAuth 2.0 authentication classes
+│   │   └── simulation/                        # Performance test scenarios
+│   ├── src/test/resources/                    # Configuration files
+│   │   ├── gatling-simulation.properties      # Test configuration parameters
+│   │   ├── gatling.conf                       # Gatling framework settings
+│   │   └── logback-test.xml                   # Logging configuration
+│   └── target/                                # Maven build outputs & test reports
+├── scripts/                                   # Test automation scripts
+│   ├── oauth-demo.sh                          # OAuth demonstration script
+│   ├── run-oauth-test.sh                      # OAuth-enabled test runner
+│   ├── run-standard-test.sh                   # Standard test runner
+│   ├── run-with-java21.sh                     # Java 21 specific test runner
+│   └── test-oauth-api.sh                      # API validation script
+├── .gitignore                                 # Git ignore patterns
+├── .venv/                                     # Python virtual environment
+├── LICENSE                                    # Project license
+└── README.md                                  # This documentation
 ```
 
 ## 🚀 Quick Start
