@@ -393,44 +393,22 @@ The suite supports pre-test environment resets using storage-level snapshots for
 ASCII high-level flow:
 
 ```
-  +-----------------+         +---------------------+
-  |  Golden Source  |         |   Performance Run   |
-  |  (Snapshot/ARN) |         |    (Gatling Java)   |
-  +--------+--------+         +-----------+---------+
-     |                              |
-     | aws-reset-db.sh              |
-     v                              |
-      +----------+-----------+                  |
-      |  Reset Provisioning |                  |
-      |  (pick one method)  |                  |
-      +----------+-----------+                  |
-     |                              |
-     +-----------+-----------+                  |
-     |  Aurora Clone (COW)  |<-- optional -->   |
-     |  RDS Snapshot Restore|<-- methods -->    |
-     |  EBS Vols from Snaps |                  |
-     |  EKS PVC via VSnap   |                  |
-     +-----------+-----------+                  |
-     |                              |
-     v                              v
-   +-------+-------------------------------+------+
-   |   Reset Endpoint / Volumes ready (JSON out) |
-   +-------+-------------------------------+------+
-     |                              |
-     | run-gatling-with-aws-reset.sh|
-     v                              |
-  +--------+--------+                      |
-  |  Export endpoint |                      |
-  | RESET_DB_ENDPOINT|                      |
-  +--------+--------+                      |
-     |                              |
-     v                              v
-    +------+-------------------------------+------+
-    |             Gatling Execution               |
-    +------+-------------------------------+------+
-     |                              |
-     v                              |
-      Cleanup created resources <-----------
+[Golden snapshot/ARN]
+          |
+          v
+[aws-reset-db.sh --method {aurora|rds|ebs|eks}]
+          |
+          v
+[Reset ready: endpoint/volumes (JSON)]
+          |
+          v
+[run-gatling-with-aws-reset.sh -- ...]
+          |
+          v
+[Gatling run]
+          |
+          v
+[Cleanup resources]
 ```
 
 Quick tips:
