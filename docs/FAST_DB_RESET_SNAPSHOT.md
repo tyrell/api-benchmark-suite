@@ -1,215 +1,305 @@
-# Fast DB Reset via Snapshot & Restore (Environment Reset)
+# Fast Environment Resets with AWS Snapshots (Recommended)
 
-A practical, fast-reset strategy to keep performance/test data under control between Gatling runs. Instead of deleting rows one by one, we reset the environment to a clean baseline by restoring a pre-created database snapshot.
+For large datasets (millions of rows) and complex schemas, the fastest and most reliable way to reset between Gatling runs is to use storage-level snapshots provided by AWS. Instead of deleting rows or replaying logical dumps, we revert the entire database storage to a known-good baseline in seconds to minutes.
 
-This approach is ideal when:
-- The API under test creates/updates lots of data per run
-- You need deterministic test starts and consistent metrics
-- You can afford resetting the whole test database between runs
-
-> Tip: Use this for dedicated Perf/Staging environments. For shared prod-like environments, prefer tenant-per-run or purge-by-tag patterns.
+This guide prioritizes AWS-native snapshot options first, then lists logical dump approaches as an appendix.
 
 ---
 
-## What you get
-- Consistent starting dataset for every run
-- O(1) cleanup time regardless of data volume
-- Works across many databases (Postgres, MySQL, MongoDB)
-- Easy to automate in CI/CD or local scripts
+## Why snapshots for this project
+- O(1) reset time regardless of how much test data was written
+- Deterministic starting state for every run → consistent performance metrics
+- Scales to multi-million row datasets and complex relational graphs
+- Fits dedicated Perf/Staging environments used by this suite
+
+> For shared environments, consider tenant-per-run or purge-by-tag as complementary strategies.
 
 ---
 
-## Overview of the workflow
-1. Prepare a pristine baseline database with the schema and seed data required for tests
-2. Take a baseline snapshot/backup once and store it (artifact or object storage)
-3. Before each Gatling run, restore that snapshot to reset the environment fast
-4. Run the test
-5. Optionally, take a post-run backup for debugging (rare)
+## Recommended options on AWS (choose based on your DB type)
+
+1) Aurora MySQL/PostgreSQL – Fast Database Cloning (fastest, copy-on-write)
+- Create an Aurora clone in seconds; run tests; drop clone when finished
+- Zero data copy upfront (page-level copy-on-write) → ideal for large data
+
+2) Amazon RDS (non‑Aurora) – Restore from DB Snapshot
+- Create a baseline DB snapshot once; restore a fresh instance before each run
+- Automate endpoint/connection switching via RDS Proxy or Route 53
+
+3) Self‑managed DB on EC2 – EBS Volume Snapshots with Fast Snapshot Restore (FSR)
+- Snapshot EBS volumes (data/WAL) once; create new volumes from the snapshot for each run
+- Attach, mount, and start DB → environment reset without logical restore
+
+4) Kubernetes on AWS (EKS) – CSI VolumeSnapshot for EBS
+- Use VolumeSnapshot/VolumeSnapshotClass with the AWS EBS CSI driver
+- Recreate PVCs from snapshots for quick, declarative resets
 
 ---
 
-## Quick start: Postgres (recommended)
+## 1) Aurora fast database cloning (best if you can use Aurora)
 
-### 1) Create a baseline snapshot
-Use a throwaway DB (or your test DB after seeding) and generate a compressed dump.
+Aurora supports near-instant cloning using copy-on-write. You get a full logical copy view without physically duplicating data until pages are modified.
 
+High-level flow:
+- Keep a “golden” Aurora cluster up to date (schema + seed data)
+- Before each Gatling run, create a clone cluster (seconds)
+- Point your app/tests to the clone endpoint
+- Drop the clone after the run
+
+Example (Aurora PostgreSQL) via AWS CLI:
 ```bash
-# Environment variables (adjust accordingly)
-export PGHOST=localhost
-export PGPORT=5432
-export PGUSER=app_user
-export PGPASSWORD=app_password
-export PGDATABASE=customer_api
+# Variables
+SRC_CLUSTER_ARN=arn:aws:rds:us-east-1:123456789012:cluster:customer-api-golden
+CLONE_ID=customer-api-clone-$(date +%Y%m%d%H%M)
+ENGINE=aurora-postgresql
+AZ=us-east-1a
 
-# Create a compressed baseline dump (one-time or whenever schema/seed changes)
-pg_dump -Fc -h "$PGHOST" -p "$PGPORT" -U "$PGUSER" "$PGDATABASE" > baseline.dump
+# 1) Create clone cluster
+aws rds create-db-cluster \
+  --db-cluster-identifier "$CLONE_ID" \
+  --source-db-cluster-identifier "$SRC_CLUSTER_ARN" \
+  --engine "$ENGINE"
+
+# 2) Add an instance to the clone cluster
+aws rds create-db-instance \
+  --db-instance-identifier "$CLONE_ID-1" \
+  --db-instance-class db.r6g.large \
+  --engine "$ENGINE" \
+  --db-cluster-identifier "$CLONE_ID" \
+  --availability-zone "$AZ"
+
+# Wait for available status, then fetch the reader/writer endpoint
+aws rds describe-db-clusters --db-cluster-identifier "$CLONE_ID" \
+  --query 'DBClusters[0].Endpoint' --output text
+
+# After tests
+aws rds delete-db-instance --db-instance-identifier "$CLONE_ID-1" --skip-final-snapshot
+aws rds delete-db-cluster --db-cluster-identifier "$CLONE_ID" --skip-final-snapshot
 ```
 
-Store `baseline.dump` in your repo (small DB only), build artifacts, or S3/GCS/Azure Blob. For large DBs, prefer object storage.
-
-### 2) Fast restore before each run
-
-```bash
-# Drop and recreate (careful: destructive!)
-psql -h "$PGHOST" -p "$PGPORT" -U "$PGUSER" -d postgres -c "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = '$PGDATABASE';"
-psql -h "$PGHOST" -p "$PGPORT" -U "$PGUSER" -d postgres -c "DROP DATABASE IF EXISTS $PGDATABASE;"
-psql -h "$PGHOST" -p "$PGPORT" -U "$PGUSER" -d postgres -c "CREATE DATABASE $PGDATABASE;"
-
-# Restore from baseline
-pg_restore -h "$PGHOST" -p "$PGPORT" -U "$PGUSER" -d "$PGDATABASE" --no-owner --no-privileges --clean baseline.dump
-```
-
-### 3) Optional: even faster patterns
-- Create a template database and clone from template:
-  ```sql
-  -- one-time (after seeding) in psql connected to postgres
-  CREATE DATABASE template_perf TEMPLATE customer_api;
-  -- per run
-  DROP DATABASE IF EXISTS customer_api;
-  CREATE DATABASE customer_api TEMPLATE template_perf;
-  ```
-- Use filesystem-level snapshots (ZFS/Btrfs/LVM) or cloud volume snapshots for near-instant resets.
+Notes
+- Aurora clones are ideal for 3M+ records because they avoid full copies
+- You can maintain multiple clones in parallel for concurrent test runs
+- Use parameter groups and security groups identical to your golden cluster
 
 ---
 
-## MySQL/MariaDB
+## 2) RDS snapshots and restore (PostgreSQL/MySQL on RDS)
 
-### 1) Snapshot (logical)
+If you’re on RDS but not using Aurora, rely on DB snapshots.
+
+Baseline snapshot (one-time or whenever schema/seed changes):
 ```bash
-export MYSQL_PWD=app_password
-mysqldump -h localhost -P 3306 -u app_user --databases customer_api --single-transaction --quick --routines --triggers > baseline.sql
+aws rds create-db-snapshot \
+  --db-instance-identifier customer-api-perf \
+  --db-snapshot-identifier customer-api-baseline
 ```
 
-### 2) Restore (before each run)
+Fast reset before each run:
 ```bash
-export MYSQL_PWD=app_password
-mysql -h localhost -P 3306 -u app_user -e "DROP DATABASE IF EXISTS customer_api; CREATE DATABASE customer_api;"
-mysql -h localhost -P 3306 -u app_user customer_api < baseline.sql
+RUN_ID=$(date +%Y%m%d%H%M)
+NEW_ID=customer-api-restore-$RUN_ID
+
+# 1) Restore new instance from baseline snapshot
+aws rds restore-db-instance-from-db-snapshot \
+  --db-instance-identifier "$NEW_ID" \
+  --db-snapshot-identifier customer-api-baseline \
+  --db-instance-class db.m6g.large \
+  --multi-az \
+  --publicly-accessible false
+
+# 2) Wait for available, then fetch endpoint
+aws rds describe-db-instances --db-instance-identifier "$NEW_ID" \
+  --query 'DBInstances[0].Endpoint.Address' --output text
+
+# 3) Point Gatling/app to the new endpoint for the run
+# 4) After tests, delete the instance
+aws rds delete-db-instance --db-instance-identifier "$NEW_ID" --skip-final-snapshot
 ```
 
-> For large datasets, consider Percona XtraBackup or volume snapshots.
+Endpoint management strategies
+- RDS Proxy: point tests to a stable proxy endpoint; flip target group to the restored instance
+- Route 53: use a CNAME that you update to the restored endpoint per run
+- Config vars: pass the restored endpoint to Gatling via `-Dapi.base.url` or DB connection env
 
 ---
 
-## MongoDB
+## 3) EC2 self-managed DB with EBS Snapshots + Fast Snapshot Restore
 
-### 1) Snapshot (dump)
+For PostgreSQL/MySQL running on EC2 with EBS, create crash- or application‑consistent EBS snapshots once, then rehydrate new volumes per run.
+
+Snapshot creation (one-time baseline)
+1) Make the filesystem/application consistent:
+- Postgres (simple): stop the service (`systemctl stop postgresql`) or use `pg_basebackup`/`pg_start_backup` advanced flow
+- MySQL: `FLUSH TABLES WITH READ LOCK` (or stop service) to quiesce writes
+- Filesystem: optionally `fsfreeze` if needed
+2) Create multi-volume snapshots if you separate data and WAL/redo logs.
+
+Using AWS CLI (multi-volume, crash-consistent):
 ```bash
-mongodump --host localhost --port 27017 --db customer_api --out mongo-baseline
+# Create snapshots for all EBS volumes attached to an instance
+aws ec2 create-snapshots \
+  --instance-specification InstanceId=i-0123456789abcdef0,ExcludeBootVolume=true \
+  --description "customer-api-baseline" \
+  --tag-specifications 'ResourceType=snapshot,Tags=[{Key=Name,Value=customer-api-baseline}]'
 ```
 
-### 2) Restore (before each run)
+Enable Fast Snapshot Restore (FSR) in the AZs you’ll use:
 ```bash
-# Drop db
-echo "db.dropDatabase()" | mongosh "mongodb://localhost:27017/customer_api"
-# Restore
-mongorestore --host localhost --port 27017 --db customer_api --drop mongo-baseline/customer_api
+aws ec2 enable-fast-snapshot-restores \
+  --availability-zones us-east-1a us-east-1b \
+  --snapshot-ids snap-aaa snap-bbb
 ```
+
+Reset before each run (rehydrate volumes):
+```bash
+# Variables
+AZ=us-east-1a
+INSTANCE_ID=i-0123456789abcdef0
+DEVICE_NAME=/dev/xvdf            # mount point for DB data volume
+SNAP_ID=snap-aaa                  # the baseline snapshot for data volume
+VOL_TYPE=gp3                      # choose gp3/io2 as needed
+
+# 1) Create a fresh volume from the snapshot
+VOL_ID=$(aws ec2 create-volume \
+  --availability-zone "$AZ" \
+  --snapshot-id "$SNAP_ID" \
+  --volume-type "$VOL_TYPE" \
+  --query 'VolumeId' --output text)
+
+# 2) Wait for volume to be available, then attach
+aws ec2 wait volume-available --volume-ids "$VOL_ID"
+aws ec2 attach-volume --volume-id "$VOL_ID" --instance-id "$INSTANCE_ID" --device "$DEVICE_NAME"
+
+# 3) SSH to the instance, mount volume (ensure /etc/fstab is correct), and start DB
+#    sudo mount /dev/xvdf /var/lib/postgresql/data
+#    sudo systemctl start postgresql
+```
+
+If you have separate volumes for WAL/redo logs, repeat the steps per snapshot and attach to their respective devices. With FSR enabled, initialization wait time is minimized.
+
+Cleanup after run:
+- Stop DB, detach and delete volumes created for the run
+- Or terminate the whole EC2 test instance if ephemeral
+
+Notes
+- Prefer gp3/io2 for predictable performance
+- Tag all snapshots and volumes (Name=customer-api-baseline, RunId, etc.)
+- Consider Ansible/Terraform to automate volume swap and service start/stop
 
 ---
 
-## Docker and Docker Compose
+## 4) EKS (Kubernetes) with AWS EBS CSI VolumeSnapshot
 
-If your DB runs via Docker/Compose, run the commands inside the container or bind the client locally.
-
-```bash
-# Example: run pg_dump from inside the container
-docker exec -e PGPASSWORD=$PGPASSWORD my-postgres \
-  pg_dump -Fc -h 127.0.0.1 -U $PGUSER $PGDATABASE > baseline.dump
-
-# Or copy dump into the container and restore inside
-docker cp baseline.dump my-postgres:/tmp/baseline.dump
-docker exec -e PGPASSWORD=$PGPASSWORD my-postgres \
-  pg_restore -h 127.0.0.1 -U $PGUSER -d $PGDATABASE --no-owner --clean /tmp/baseline.dump
+Define a VolumeSnapshotClass for the AWS EBS CSI driver:
+```yaml
+apiVersion: snapshot.storage.k8s.io/v1
+kind: VolumeSnapshotClass
+metadata:
+  name: ebs-csi-snapclass
+driver: ebs.csi.aws.com
+deletionPolicy: Delete
 ```
 
-> For fastest resets, use ephemeral containers and disposable volumes: recreate the DB service with a fresh seeded volume per run.
+Create a snapshot:
+```yaml
+apiVersion: snapshot.storage.k8s.io/v1
+kind: VolumeSnapshot
+metadata:
+  name: customer-api-baseline
+spec:
+  volumeSnapshotClassName: ebs-csi-snapclass
+  source:
+    persistentVolumeClaim:
+      name: customer-api-pvc
+```
+
+Restore PVC from snapshot before a run:
+```yaml
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: customer-api-pvc-restore
+spec:
+  storageClassName: gp3
+  dataSource:
+    name: customer-api-baseline
+    kind: VolumeSnapshot
+    apiGroup: snapshot.storage.k8s.io
+  accessModes: [ "ReadWriteOnce" ]
+  resources:
+    requests:
+      storage: 200Gi
+```
+
+Then redeploy your DB StatefulSet to use the restored PVC. Automate this with a pre-run Job and gating your Gatling job on its completion.
 
 ---
 
-## Kubernetes
+## Integrating with this project’s Gatling runs
 
-- Put baseline backup in a PersistentVolume or object storage
-- Use a Kubernetes Job to run the restore pre-step
-- Gate your Gatling job/pod on the completion of the restore job
+- Run the snapshot-based reset as a pre-step, then execute Maven Gatling tests.
+- Pass the fresh DB endpoint/connection in via configuration (system properties or env vars).
 
-High-level sequence:
-1. `restore-db` Job runs, restores from snapshot
-2. `gatling-run` Job starts after `restore-db` completes
-3. Optionally, a `cleanup` Job can drop schemas or volumes
-
----
-
-## Integrating with this project
-
-You can plug the reset step before your Gatling Maven call. For example, in a local shell:
-
+Example local sequence:
 ```bash
-# 1) Reset DB to baseline
-./scripts/reset-db-from-snapshot.sh  # <— create this script using the examples above
+# 1) Reset using your chosen AWS method (Aurora clone / RDS restore / EBS volumes)
+./scripts/aws-reset-db.sh   # implement calling the AWS CLI flows shown above
 
 # 2) Run tests
-cd gatling-maven && mvn gatling:test \
-  -Dgatling.simulationClass=co.tyrell.gatling.simulation.ApiBenchmarkSimulationWithOAuth
+cd gatling-maven
+mvn gatling:test -Dgatling.simulationClass=co.tyrell.gatling.simulation.ApiBenchmarkSimulationWithOAuth
 ```
 
-Or inline in CI/CD (GitHub Actions sample):
-
-```yaml
-- name: Restore DB snapshot
-  run: |
-    export PGHOST=${{ secrets.PGHOST }}
-    export PGPORT=${{ secrets.PGPORT }}
-    export PGUSER=${{ secrets.PGUSER }}
-    export PGPASSWORD=${{ secrets.PGPASSWORD }}
-    export PGDATABASE=${{ secrets.PGDATABASE }}
-    pg_restore -h "$PGHOST" -p "$PGPORT" -U "$PGUSER" -d "$PGDATABASE" --no-owner --clean baseline.dump
-
-- name: Run Gatling
-  run: |
-    cd gatling-maven
-    mvn -q gatling:test -Dgatling.simulationClass=co.tyrell.gatling.simulation.ApiBenchmarkSimulationWithOAuth
-```
+In CI/CD, add a pre-run stage that performs the reset and exports the DB endpoint/connection string for the test stage.
 
 ---
 
-## Seeding and schema management
-
-Keep your baseline up-to-date by re-generating it when the schema or seed data changes.
-- Use migration tools (Liquibase or Flyway) to build the DB, then dump
-- Load minimal representative data, not full production volumes
-- Version your baseline (e.g., `baseline_v2025-09-27.dump`)
-
----
-
-## Safety & governance
-- Restrict snapshot restore permissions to Perf environments only
-- Never restore test backups into production
-- Mask/anonymize any sensitive data before creating baselines
-- Securely store dumps (encrypt at rest; use secrets for credentials)
+## Governance, safety, and cost
+- Restrict who can create/restore snapshots and clones (IAM least privilege)
+- Never point production traffic to clones/restored instances
+- Encrypt snapshots/volumes; manage KMS keys and access
+- Consider Fast Snapshot Restore costs per AZ; disable when not needed
+- Clean up clones, restored instances, and volumes after runs
 
 ---
 
 ## Performance tips
-- Prefer template DB cloning for Postgres when possible (very fast)
-- Keep indexes and statistics updated in the baseline
-- Separate storage for WAL/logs to speed restore
-- Warm-up runs after restore can stabilize caches before measuring
+- Aurora clones scale best for very large datasets (minimal copy upfront)
+- Enable Fast Snapshot Restore in the AZs used for EC2/EBS workflows
+- Use appropriate EBS volume types (gp3/io2) and tune IOPS/throughput
+- Warm-up after reset to stabilize caches before measurements
 
 ---
 
 ## Troubleshooting
-- Restore is slow → Use compressed dumps with `-j` parallel restore (`pg_restore -j 4`)
-- Permissions errors → Add `--no-owner --no-privileges` and ensure roles exist
-- Locks preventing drop → Terminate sessions before dropping DB (see commands above)
-- Data drift between runs → Recreate baseline from the latest schema + seed
+- Slow initialization of volumes → enable FSR or pre-warm by scanning device
+- Inconsistent snapshots → ensure app/filesystem quiescence before taking baseline
+- Endpoint switching issues → standardize on RDS Proxy or Route 53 CNAME
+- Permission errors → verify IAM policies for EBS/RDS/Aurora
 
 ---
 
-## Summary
-Fast environment resets via snapshot/restore give you:
-- Deterministic test starts
-- Minimal cleanup time
-- Easy automation locally and in CI
+## Appendix: Logical dump/restore (fallback)
 
-Adopt it as the default for this suite, and pair with a periodic baseline refresh to keep parity with your evolving schema and seed data.
+If snapshots aren’t available, use logical backups. These are slower on large datasets but portable.
+
+Postgres
+```bash
+pg_dump -Fc -h "$PGHOST" -p "$PGPORT" -U "$PGUSER" "$PGDATABASE" > baseline.dump
+pg_restore -h "$PGHOST" -p "$PGPORT" -U "$PGUSER" -d "$PGDATABASE" --no-owner --no-privileges --clean baseline.dump
+```
+
+MySQL/MariaDB
+```bash
+mysqldump -h localhost -P 3306 -u app_user --databases customer_api --single-transaction --quick --routines --triggers > baseline.sql
+mysql -h localhost -P 3306 -u app_user customer_api < baseline.sql
+```
+
+MongoDB
+```bash
+mongodump --host localhost --port 27017 --db customer_api --out mongo-baseline
+mongorestore --host localhost --port 27017 --db customer_api --drop mongo-baseline/customer_api
+```
+
+These approaches remain useful for developer laptops and small CI runs but are not recommended for 3M+ rows.
