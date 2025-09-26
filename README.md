@@ -430,12 +430,6 @@ This project is licensed under the MIT License.
 
 This project is for educational and demonstration purposes.
 
-## 🔗 Related Documentation
-
-- **Detailed Configuration**: See all available properties and usage examples
-- **OAuth Implementation**: Deep dive into OAuth 2.0 patterns and token management  
-- **Performance Testing**: Best practices for enterprise load testing with Gatling
-
 ---
 
 **Remember**: This entire project uses fictional data and APIs. All customer information, business logic, and API endpoints are completely fabricated for testing and educational purposes only.
