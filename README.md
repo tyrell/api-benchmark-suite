@@ -433,3 +433,8 @@ This project is for educational and demonstration purposes.
 ---
 
 **Remember**: This entire project uses fictional data and APIs. All customer information, business logic, and API endpoints are completely fabricated for testing and educational purposes only.
+
+## 🔗 Related Documentation
+
+- Team Quick Start Guide: docs/TEAM_QUICK_START.md
+- Fast DB Reset via AWS Snapshots: docs/FAST_DB_RESET_SNAPSHOT.md
