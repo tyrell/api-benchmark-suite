@@ -1,11 +1,5 @@
 # API Performance Benchmark Suite
 
-⚠️ **IMPORTANT DISCLAIMER**  
-**This is a HYPOTHETICAL/FICTIONAL API testing demonstration project.**  
-All customer data, API endpoints, and business logic are completely fabricated for educational and testing purposes only. This does NOT represent any real-world Customer API or actual business systems.
-
----
-
 ## 🎯 Overview
 
 A comprehensive performance testing suite demonstrating enterprise-grade load testing with **Gatling**, **OAuth 2.0 authentication**, and modern API testing patterns. This project serves as a complete reference implementation for:
@@ -478,8 +472,6 @@ This is a demonstration project. Key areas for enhancement:
 This project is licensed under the MIT License.
 
 **Original Author**: [Tyrell Perera](https://tyrell.co)
-
-This project is for educational and demonstration purposes.
 
 ---
 
