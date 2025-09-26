@@ -23,17 +23,17 @@ A comprehensive performance testing suite demonstrating enterprise-grade load te
 
 ```
 api-benchmark-suite/
-├── api/                          # Python Flask test server
-│   ├── app.py                   # Customer API v3.0.0 mock server
-│   └── requirements.txt         # Python dependencies
-├── gatling-maven/               # Gatling performance tests
-│   ├── src/test/java/           # Java test simulations
-│   │   ├── simulation/          # Performance test scenarios
-│   │   └── auth/               # OAuth 2.0 implementation
-│   └── src/test/resources/     # Configuration files
+├── api/                                       # Python Flask test server
+│   ├── app.py                                 # Customer API v3.0.0 mock server
+│   └── requirements.txt                       # Python dependencies
+├── gatling-maven/                             # Gatling performance tests
+│   ├── src/test/java/                         # Java test simulations
+│   │   ├── simulation/                        # Performance test scenarios
+│   │   └── auth/                              # OAuth 2.0 implementation
+│   └── src/test/resources/                    # Configuration files
 │       └── gatling-simulation.properties
-├── scripts/                     # Automation scripts
-└── docs/                       # Documentation
+├── scripts/                                   # Automation scripts
+└── docs/                                      # Documentation
 ```
 
 ## 🚀 Quick Start
