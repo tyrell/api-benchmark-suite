@@ -76,9 +76,7 @@ ASCII high-level flow:
 [Cleanup resources]
 ```
 
-Quick tips:
-
-## 🚀 Quick Start
+## 🚀 Gatling Quick Start (using the included API Stub)
 
 ### 1. Prerequisites
 - **Java 21 LTS** (recommended) or Java 11+
