@@ -1,5 +1,9 @@
 package co.tyrell.gatling.auth;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.Properties;
+
 /**
  * OAuth configuration class to hold OAuth-related settings.
  * This allows for easy configuration of OAuth parameters without hardcoding.
@@ -124,20 +128,67 @@ public class OAuthConfig {
         }
     }
     
-    // Factory method to create from system properties
+    // Load properties file from classpath
+    private static Properties loadPropertiesFile() {
+        Properties properties = new Properties();
+        try (InputStream input = OAuthConfig.class.getClassLoader().getResourceAsStream("gatling-simulation.properties")) {
+            if (input != null) {
+                properties.load(input);
+            }
+        } catch (IOException e) {
+            // Ignore - we'll fall back to system properties and defaults
+        }
+        return properties;
+    }
+
+    // Get property value with fallback chain: system property -> properties file -> default
+    private static String getProperty(Properties props, String key, String defaultValue) {
+        // First check system properties (highest priority)
+        String systemValue = System.getProperty(key);
+        if (systemValue != null) {
+            return systemValue;
+        }
+        
+        // Then check properties file
+        String fileValue = props.getProperty(key);
+        if (fileValue != null && !fileValue.trim().isEmpty()) {
+            return fileValue;
+        }
+        
+        // Finally use default
+        return defaultValue;
+    }
+    
+    private static boolean getBooleanProperty(Properties props, String key, boolean defaultValue) {
+        String value = getProperty(props, key, String.valueOf(defaultValue));
+        return Boolean.parseBoolean(value);
+    }
+    
+    private static long getLongProperty(Properties props, String key, long defaultValue) {
+        String value = getProperty(props, key, String.valueOf(defaultValue));
+        try {
+            return Long.parseLong(value);
+        } catch (NumberFormatException e) {
+            return defaultValue;
+        }
+    }
+    
+    // Factory method to create from system properties and properties file
     public static OAuthConfig fromSystemProperties() {
+        Properties props = loadPropertiesFile();
+        
         return new Builder()
-            .enabled(Boolean.parseBoolean(System.getProperty("oauth.enabled", "false")))
-            .tokenEndpoint(System.getProperty("oauth.token.endpoint"))
-            .clientId(System.getProperty("oauth.client.id"))
-            .clientSecret(System.getProperty("oauth.client.secret"))
-            .scope(System.getProperty("oauth.scope", ""))
-            .grantType(System.getProperty("oauth.grant.type", "client_credentials"))
-            .authorizationEndpoint(System.getProperty("oauth.authorization.endpoint"))
-            .redirectUri(System.getProperty("oauth.redirect.uri"))
-            .username(System.getProperty("oauth.username"))
-            .password(System.getProperty("oauth.password"))
-            .tokenRefreshBuffer(Long.parseLong(System.getProperty("oauth.token.refresh.buffer", "300")))
+            .enabled(getBooleanProperty(props, "oauth.enabled", false))
+            .tokenEndpoint(getProperty(props, "oauth.token.endpoint", null))
+            .clientId(getProperty(props, "oauth.client.id", null))
+            .clientSecret(getProperty(props, "oauth.client.secret", null))
+            .scope(getProperty(props, "oauth.scope", ""))
+            .grantType(getProperty(props, "oauth.grant.type", "client_credentials"))
+            .authorizationEndpoint(getProperty(props, "oauth.authorization.endpoint", null))
+            .redirectUri(getProperty(props, "oauth.redirect.uri", null))
+            .username(getProperty(props, "oauth.username", null))
+            .password(getProperty(props, "oauth.password", null))
+            .tokenRefreshBuffer(getLongProperty(props, "oauth.token.refresh.buffer", 300))
             .build();
     }
 }

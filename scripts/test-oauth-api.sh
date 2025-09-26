@@ -1,23 +1,26 @@
 #!/bin/bash
 
-# Test OAuth API functionality
-# This script demonstrates how to interact with the OAuth-enabled test API
+# HYPOTHETICAL OAuth API Testing Script
+# ⚠️  WARNING: This tests a FICTIONAL API for demonstration purposes only.
+# This script demonstrates how to interact with a mock OAuth-enabled test API
 
 API_BASE="http://localhost:5050"
-CLIENT_ID="demo-client-id"
-CLIENT_SECRET="demo-client-secret"
+CLIENT_ID="demo-client-id"  # FAKE credentials for testing
+CLIENT_SECRET="demo-client-secret"  # FAKE credentials for testing
 
-echo "🧪 Testing OAuth API Functionality"
-echo "=================================="
+echo "🧪 Testing HYPOTHETICAL OAuth API Functionality"
+echo "==============================================="
+echo "⚠️  NOTE: All API endpoints and data are FICTIONAL"
+echo
 
 # Check if API is running
 echo "1. Health Check..."
 curl -s "$API_BASE/api/health" | python3 -m json.tool
 echo
 
-# Test public endpoint
+# Test public endpoint (Customer API search)
 echo "2. Testing public endpoint..."
-curl -s "$API_BASE/api/hello" | python3 -m json.tool
+curl -s "$API_BASE/v3/brands/AAMI/customers?limit=3" | python3 -m json.tool
 echo
 
 # Get OAuth token
@@ -40,9 +43,9 @@ fi
 echo "✅ Got access token: ${ACCESS_TOKEN:0:50}..."
 echo
 
-# Test protected endpoint
-echo "4. Testing protected endpoint..."
-curl -s "$API_BASE/api/hello/protected" \
+# Test protected endpoint (Customer API with OAuth)
+echo "4. Testing protected Customer API endpoint..."
+curl -s "$API_BASE/v3/brands/AAMI/customers?limit=1" \
   -H "Authorization: Bearer $ACCESS_TOKEN" | python3 -m json.tool
 echo
 
@@ -99,7 +102,7 @@ echo "✅ OAuth API testing completed!"
 echo
 echo "To run performance tests against this OAuth-enabled API:"
 echo "  1. Start the API: cd api && python app.py"
-echo "  2. Update oauth-config.properties with:"
+echo "  2. Update gatling-simulation.properties with:"
 echo "     oauth.enabled=true"
 echo "     oauth.tokenUrl=http://localhost:5050/oauth/token"
 echo "     oauth.clientId=demo-client-id"

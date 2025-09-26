@@ -1,378 +1,420 @@
-# API Benchmark Suite
-
-A comprehensive REST API performance testing suite built with Gatling, featuring **optional OAuth 2.0 authentication support** for enterprise-grade load testing.
-
-## 🚀 Key Features
-
-- **High-Performance Load Testing** with Gatling Maven plugin
-- **OAuth 2.0 Authentication Support** (Client Credentials & Password flows)
-- **Configurable NFR Assertions** for enterprise-grade testing
-- **Sample OAuth-enabled API** for end-to-end testing
-- **Smart Token Management** with caching and automatic refresh
-- **Multiple Testing Scenarios** from basic to comprehensive OAuth flows
-
-## 📁 Project Structure
-
-```
-api-benchmark-suite/
-├── api/                    # OAuth-enabled Flask test API
-├── gatling-maven/         # Gatling performance testing suite
-├── scripts/               # Ready-to-use testing scripts
-└── docs/                  # Documentation (README, OAuth guide)
-```
-
-## ⚡ Quick Start
-
-### Option 1: Complete OAuth Demo (Recommended)
-```bash
-# Run full OAuth demonstration with API and performance testing
-./scripts/oauth-demo.sh
-```
-
-### Option 2: Manual Steps
-```bash
-# 1. Start the OAuth-enabled test API
-cd api && .venv/bin/python app.py
-
-# 2. Run OAuth performance tests (in another terminal)
-./scripts/run-oauth-test.sh
-```
-
-## 🔧 Prerequisites
-
-- **Java 21 LTS** (recommended) or Java 11+
-- **Maven 3.6+** 
-- **Python 3.x** (for test API)
-- **curl** (for API testing)
-
-## 🔐 OAuth Configuration
-
-OAuth support is **completely optional**. Enable it by configuring `gatling-maven/src/test/resources/oauth-config.properties`:
-
-```properties
-oauth.enabled=true
-oauth.token.endpoint=http://localhost:5050/oauth/token
-oauth.client.id=demo-client-id
-oauth.client.secret=demo-client-secret
-oauth.scope=api:read api:write
-```
-
-### Available Test Clients
-| Client ID | Secret | Scopes | Purpose |
-|-----------|--------|---------|---------|
-| `demo-client-id` | `demo-client-secret` | `api:read`, `api:write`, `admin` | Full access testing |
-| `test-client` | `test-secret` | `api:read` | Read-only testing |
-
-## 🧪 API Endpoints
-
-### Public Endpoints (No Authentication)
-- `GET /api/health` - Health check
-- `GET /api/hello` - Basic hello endpoint  
-- `POST /oauth/token` - OAuth token endpoint
-
-### Protected Endpoints (OAuth Required)
-- `GET /api/hello/protected` - Protected hello
-- `GET /api/customers` - List customers
-- `POST /api/customers` - Create customer (requires `api:write`)
-- `GET|PUT|DELETE /api/customers/{id}` - Customer operations
-- `GET /api/cev-events` - List CEV events
-- `POST /api/cev-events` - Create CEV event (requires `api:write`)
-- `GET|PUT /api/cev-events/{id}` - CEV event operations
-- `GET /api/admin/stats` - Admin statistics (requires `admin`)
-
-## 🏃‍♂️ Running Tests
-
-### OAuth-Enabled Tests
-```bash
-# Mixed public/protected endpoint testing
-./scripts/run-oauth-test.sh
-
-# Comprehensive OAuth scenarios
-./scripts/run-oauth-comprehensive.sh
-```
-
-### Traditional Tests (No OAuth)
-```bash
-# Standard performance testing
-./scripts/run-standard-test.sh
-
-# Using specific Java version
-./scripts/run-with-java21.sh gatling:test
-```
-
-### Direct Maven Execution
-```bash
-cd gatling-maven
-
-# OAuth simulation
-mvn gatling:test -Dgatling.simulationClass=co.tyrell.gatling.simulation.ApiBenchmarkSimulationWithOAuth
-
-# Standard simulation
-mvn gatling:test -Dgatling.simulationClass=co.tyrell.gatling.simulation.ApiBenchmarkSimulation
-```
-
-## 🖥️ Setting Up the Test API Server
-
-### Step 1: Environment Setup
-```bash
-cd api
-
-# Create virtual environment (if not exists)
-python3 -m venv .venv
-source .venv/bin/activate
-
-# Install dependencies
-pip3 install -r requirements.txt
-```
-
-### Step 2: Start the Server
-```bash
-# Using virtual environment (recommended)
-.venv/bin/python app.py
-
-# Or using system Python
-python3 app.py
-```
-
-### Step 3: Verify Server is Running
-```bash
-# Health check
-curl http://localhost:5050/api/health
-
-# Get OAuth token
-curl -X POST http://localhost:5050/oauth/token \
-  -d "grant_type=client_credentials&client_id=demo-client-id&client_secret=demo-client-secret&scope=api:read api:write"
-
-# Test protected endpoint (replace YOUR_TOKEN_HERE with actual token)
-curl -H "Authorization: Bearer YOUR_TOKEN_HERE" \
-  http://localhost:5050/api/hello/protected
-```
-
-### 🚨 Troubleshooting
-| Issue | Solution |
-|-------|----------|
-| `ModuleNotFoundError: No module named 'jwt'` | Run `pip3 install -r requirements.txt` |
-| `pip: command not found` | Use `pip3` instead of `pip` |
-| Connection refused | Ensure server is running on port 5050 |
-| Permission denied | Check write permissions in project directory |
-
-## ⚙️ Performance Parameters & NFRs
-
-### Load Testing Profiles
-
-| Test Type | Users | Ramp-up | Duration | Target |
-|-----------|-------|---------|----------|--------|
-| **Standard** | 500 concurrent | 60s | 2 min constant load | `http://localhost:5050/api/hello` |
-| **OAuth** | 100 concurrent | 30s | Mixed scenarios | Multiple protected endpoints |
-
-### NFR Thresholds
-
-| Metric | Standard Tests | OAuth Tests | 
-|--------|----------------|-------------|
-| **Max Response Time** | < 1000ms | < 2000ms |
-| **Mean Response Time** | < 500ms | < 1000ms |
-| **95th Percentile** | < 800ms | < 1500ms |
-| **Success Rate** | > 99% | > 95% |
-| **Error Rate** | < 1% | < 5% |
-| **Throughput** | > 10 req/sec | > 2 req/sec |
-
-## 🔧 Customization
-
-### Modifying NFR Thresholds
-1. Edit `gatling-maven/src/test/java/co/tyrell/gatling/simulation/ApiBenchmarkSimulation.java`
-2. Locate the `assertions` section:
-   ```java
-   .assertions(
-       global().responseTime().max().lt(1000),           // Max response time
-       global().requestsPerSec().gt(10.0),               // Throughput  
-       global().failedRequests().percent().lt(1.0)       // Error rate
-   )
-   ```
-3. Adjust values and re-run tests
-
-### OAuth Configuration Files
-- **`oauth-config.properties`** - Main OAuth settings
-- **`OAuthConfig.java`** - Configuration class with builder pattern  
-- **`OAuthTokenManager.java`** - Token caching and refresh logic
-- **OAuth Simulations** - `ApiBenchmarkSimulationWithOAuth.java`, `OAuthComprehensiveSimulation.java`
-
-## 🔐 OAuth Implementation Details
-
-### Supported Flows
-- **Client Credentials Grant** - Service-to-service authentication
-- **Password Grant** - User credential-based authentication  
-
-### Core Components
-
-#### 1. OAuth Configuration (`OAuthConfig.java`)
-- **Builder pattern** for easy configuration
-- **Environment-based** configuration loading
-- Support for multiple OAuth grant types
-- Configurable token caching and refresh settings
-
-#### 2. OAuth Token Manager (`OAuthTokenManager.java`)
-- **Smart token caching** to avoid unnecessary requests
-- **Automatic token refresh** before expiration
-- **Thread-safe** token management for concurrent testing
-- **Comprehensive error handling** for network and auth failures
-
-#### 3. Enhanced Simulations
-- `ApiBenchmarkSimulationWithOAuth.java` - Mixed public/protected endpoint testing
-- `OAuthComprehensiveSimulation.java` - Advanced multi-scenario OAuth testing
-
-### Features
-- ✅ **Smart Token Caching** - Tokens cached and reused across requests
-- ✅ **Automatic Refresh** - Tokens refreshed before expiration (default: 300s buffer)
-- ✅ **Thread-Safe** - Safe for concurrent load testing
-- ✅ **JWT Support** - Full JWT token validation
-- ✅ **Scope-based Authorization** - Fine-grained permission testing
-- ✅ **Multiple Client Support** - Test different client configurations
-- ✅ **Configurable Timeouts** - OAuth request timeout handling
-- ✅ **Performance Optimized** - Minimal OAuth server load during testing
-
-### Advanced Configuration Options
-
-The `oauth-config.properties` file supports additional advanced settings:
-
-```properties
-# Basic Configuration
-oauth.enabled=true
-oauth.tokenUrl=http://localhost:5050/oauth/token
-oauth.clientId=demo-client-id
-oauth.clientSecret=demo-client-secret
-oauth.grantType=client_credentials
-oauth.scope=api:read api:write
-
-# Advanced Token Management
-oauth.tokenCache.enabled=true
-oauth.tokenCache.refreshThresholdSeconds=300
-oauth.request.timeout=5000
-
-# Performance Tuning
-oauth.connection.poolSize=10
-oauth.connection.maxIdleTime=30000
-```
-
-### Token Acquisition Flow
-1. **Check Cache** - Verify if cached token exists and is valid
-2. **Request New Token** - If no valid token, request from OAuth server
-3. **Cache Token** - Store token with expiration information
-4. **Return Token** - Provide token for API requests
-5. **Auto-Refresh** - Refresh token before expiration threshold
-
-### Error Handling & Troubleshooting
-
-| Issue | Symptoms | Solution |
-|-------|----------|----------|
-| **OAuth Configuration Not Found** | `FileNotFoundException` | Ensure `oauth-config.properties` exists in `src/test/resources/` |
-| **Invalid Client Credentials** | `401 Unauthorized` | Verify `oauth.clientId` and `oauth.clientSecret` |
-| **Token Request Timeout** | `SocketTimeoutException` | Check network connectivity and increase `oauth.request.timeout` |
-| **Performance Issues** | Slow test execution | Enable token caching: `oauth.tokenCache.enabled=true` |
-| **Concurrent Access Issues** | Token refresh conflicts | TokenManager is thread-safe, check OAuth server capacity |
-
-### Debug Configuration
-Enable detailed OAuth logging in `logback-test.xml`:
-```xml
-<logger name="co.tyrell.gatling.auth" level="DEBUG"/>
-<logger name="co.tyrell.gatling.auth.OAuthTokenManager" level="TRACE"/>
-```
-
-### Integration Example
-
-Basic OAuth integration in Gatling scenarios:
-
-```java
-// OAuth-enabled scenario example
-ScenarioBuilder oauthScenario = scenario("OAuth API Test")
-    .exec(session -> {
-        if (oauthConfig.isEnabled()) {
-            String token = tokenManager.getValidToken();
-            return session.set("authToken", token);
-        }
-        return session;
-    })
-    .exec(http("Protected API Request")
-        .get("/api/protected-endpoint")
-        .header("Authorization", "Bearer #{authToken}")
-        .check(status().is(200))
-    );
-```
-
-## 📊 Results & Reports
-
-After running tests, view detailed HTML reports:
-```bash
-# Reports are generated in:
-gatling-maven/target/gatling/
-
-# Open the latest report:
-open gatling-maven/target/gatling/*/index.html
-```
-
-## 🚀 Quick Reference
-
-### Essential Commands
-```bash
-# Complete OAuth demo
-./scripts/oauth-demo.sh
-
-# Start API server
-cd api && .venv/bin/python app.py
-
-# Run OAuth tests
-./scripts/run-oauth-test.sh
-
-# Run standard tests
-./scripts/run-standard-test.sh
-
-# Manual token testing
-curl -X POST http://localhost:5050/oauth/token \
-  -d "grant_type=client_credentials&client_id=demo-client-id&client_secret=demo-client-secret"
-```
-
-### Test Clients
-| Client ID | Secret | Access Level |
-|-----------|--------|--------------|
-| `demo-client-id` | `demo-client-secret` | Full access (read/write/admin) |
-| `test-client` | `test-secret` | Read-only access |
-
-## 📚 Additional Resources
-
-- **[OAuth API Testing Guide](scripts/test-oauth-api.sh)** - Manual OAuth API testing examples
-- **[Performance Test Scripts](scripts/)** - Ready-to-use testing scripts for different scenarios
-- **[Gatling Documentation](https://gatling.io/docs/)** - Official Gatling performance testing guide
-
-## 🤝 Contributing
-
-This project welcomes contributions! Please see individual component documentation for implementation details.
-
-## 👨‍💻 Author
-
-**Tyrell Perera**  
-🌐 Website: [tyrell.co](https://tyrell.co)
-
-## 📄 License
-
-This project is released under the MIT License. See the [LICENSE](LICENSE) file for details.
+# API Performance Benchmark Suite
+
+⚠️ **IMPORTANT DISCLAIMER**  
+**This is a HYPOTHETICAL/FICTIONAL API testing demonstration project.**  
+All customer data, API endpoints, and business logic are completely fabricated for educational and testing purposes only. This does NOT represent any real-world Customer API or actual business systems.
 
 ---
 
-## ✨ What's Included
+## 🎯 Overview
 
-This API Benchmark Suite provides everything you need for professional REST API performance testing:
+A comprehensive performance testing suite demonstrating enterprise-grade load testing with **Gatling**, **OAuth 2.0 authentication**, and modern API testing patterns. This project serves as a complete reference implementation for:
 
-### 🔥 Core Features
-- **Production-ready OAuth 2.0** implementation with JWT tokens
-- **Enterprise-grade load testing** with Gatling
-- **Smart token management** with caching and refresh
-- **Comprehensive test scenarios** from basic to advanced
-- **Professional reporting** with detailed HTML reports
+- **High-Performance Load Testing** with Gatling Java DSL
+- **OAuth 2.0 Client Credentials** flow implementation  
+- **Configurable Performance Testing** with externalized properties
+- **RESTful API Testing** patterns and best practices
+- **Enterprise NFR Validation** with comprehensive assertions
+- **CI/CD Integration** ready configurations
 
-### 🎯 Perfect For
-- **API Performance Testing** - Validate your API against NFRs
-- **OAuth Implementation** - Reference implementation for OAuth 2.0
-- **Load Testing** - High-performance testing with Gatling
-- **CI/CD Integration** - Automated performance testing in pipelines
-- **Enterprise Development** - Professional-grade testing tools
+## 🏗️ Architecture
 
-Get started in minutes with the OAuth demo, or customize for your specific API testing needs!
+```
+api-benchmark-suite/
+├── api/                          # Python Flask test server
+│   ├── app.py                   # Customer API v3.0.0 mock server
+│   └── requirements.txt         # Python dependencies
+├── gatling-maven/               # Gatling performance tests
+│   ├── src/test/java/           # Java test simulations
+│   │   ├── simulation/          # Performance test scenarios
+│   │   └── auth/               # OAuth 2.0 implementation
+│   └── src/test/resources/     # Configuration files
+│       └── gatling-simulation.properties
+├── scripts/                     # Automation scripts
+└── docs/                       # Documentation
+```
+
+## 🚀 Quick Start
+
+### 1. Prerequisites
+- **Java 21 LTS** (recommended) or Java 11+
+- **Maven 3.6+** 
+- **Python 3.x** (for test API server)
+- **curl** (for API validation)
+
+### 2. Start the Test API Server
+```bash
+# Navigate to API directory
+cd api
+
+# Install Python dependencies
+pip install -r requirements.txt
+
+# Start the fictional Customer API server
+python app.py
+```
+
+The server will start on `http://localhost:5050` with endpoints:
+- `GET /api/health` - Health check
+- `POST /oauth/token` - OAuth token generation
+- `GET /v3/brands/{brand}/customers` - Search customers
+- `POST /v3/brands/{brand}/customers` - Create customer
+- And more...
+
+### 3. Run Performance Tests
+
+#### Basic Performance Test
+```bash
+cd gatling-maven
+
+# Run basic simulation (no OAuth)
+mvn gatling:test -Dgatling.simulationClass=co.tyrell.gatling.simulation.ApiBenchmarkSimulation
+```
+
+#### OAuth-Enabled Performance Test
+```bash
+# Run comprehensive OAuth simulation
+mvn gatling:test -Dgatling.simulationClass=co.tyrell.gatling.simulation.ApiBenchmarkSimulationWithOAuth
+```
+
+### 4. View Results
+After running tests, open the generated HTML report:
+```
+gatling-maven/target/gatling/[simulation-timestamp]/index.html
+```
+
+## 📊 Test Scenarios
+
+### 1. ApiBenchmarkSimulation
+**Basic performance testing with OAuth token acquisition**
+- Health check validation
+- OAuth token request (public endpoint)
+- Customer search with authentication
+- Configurable load patterns and NFR assertions
+
+### 2. ApiBenchmarkSimulationWithOAuth  
+**Comprehensive OAuth-enabled enterprise testing**
+- Multi-scenario load testing (health, public, protected APIs)
+- Full Customer API CRUD operations
+- Vulnerability management endpoints
+- Customer lifecycle operations
+- Advanced performance monitoring
+
+## ⚙️ Configuration
+
+All simulation parameters are **fully externalized** and configurable:
+
+### Configuration Sources (Priority Order)
+1. **System Properties** (`-D` flags with Maven) - *Highest Priority*
+2. **Environment Variables** 
+3. **Properties File** (`gatling-simulation.properties`) - *Default Values*
+
+### Key Configuration Categories
+
+#### API Configuration
+```bash
+-Dapi.base.url=http://localhost:5050        # Test server URL
+-Dapi.brand=AAMI                           # API brand identifier  
+-Dapi.customer.search.limit=5              # Search result limit
+```
+
+#### OAuth Configuration
+```bash
+-Doauth.enabled=true                       # Enable OAuth testing
+-Doauth.client.id=demo-client-id          # OAuth client ID
+-Doauth.client.secret=demo-client-secret  # OAuth client secret
+-Doauth.scope="customer:read customer:write" # OAuth permissions
+```
+
+#### Load Testing Configuration
+```bash
+-Dgatling.users=500                        # Number of virtual users
+-Dload.ramp.up.duration=60                # Ramp up time (seconds)
+-Dload.steady.state.duration=120          # Steady state duration
+-Dload.users.per.second=50                # Target throughput
+```
+
+#### Performance Thresholds (NFR)
+```bash
+-Dperformance.max.response.time=1000      # Max response time (ms)
+-Dperformance.mean.response.time=500      # Mean response time (ms)
+-Dperformance.success.rate.threshold=99.0 # Success rate (%)
+-Dperformance.min.throughput=10.0         # Min throughput (req/sec)
+```
+
+## 🎛️ Advanced Usage
+
+### Environment-Specific Testing
+```bash
+# Development environment
+mvn gatling:test -Dapi.base.url=http://dev-api:8080 -Dapi.brand=DEV
+
+# Staging environment with relaxed thresholds
+mvn gatling:test \
+  -Dapi.base.url=https://staging-api.example.com \
+  -Dperformance.max.response.time=2000 \
+  -Dperformance.success.rate.threshold=95.0
+
+# High-load testing
+mvn gatling:test \
+  -Dgatling.users=1000 \
+  -Dload.users.per.second=100 \
+  -Dload.ramp.up.duration=120
+```
+
+### OAuth Customization
+```bash
+# Custom OAuth provider
+mvn gatling:test \
+  -Doauth.token.endpoint=https://auth.example.com/token \
+  -Doauth.client.id=prod-client \
+  -Doauth.scope="api:read api:write admin:read"
+
+# Different grant types
+mvn gatling:test \
+  -Doauth.grant.type=password \
+  -Doauth.username=testuser \
+  -Doauth.password=testpass
+```
+
+## 🧪 Testing Scripts
+
+### Automated Demo
+```bash
+# Complete OAuth demonstration
+./scripts/oauth-demo.sh
+```
+
+### Individual Test Scripts
+```bash
+# Basic OAuth test
+./scripts/run-oauth-test.sh
+
+# Standard performance test  
+./scripts/run-standard-test.sh
+
+# API validation
+./scripts/test-oauth-api.sh
+```
+
+## 🎯 Example Test Commands
+
+### Quick Validation Tests
+```bash
+# Minimal OAuth simulation test (2 users, relaxed thresholds)
+cd gatling-maven && mvn gatling:test \
+  -Dgatling.simulationClass=co.tyrell.gatling.simulation.ApiBenchmarkSimulationWithOAuth \
+  -Dgatling.users=2 \
+  -Dload.ramp.up.duration=5 \
+  -Dload.steady.state.duration=10 \
+  -Dperformance.max.response.time=30000 \
+  -Dperformance.success.rate.threshold=50.0
+
+# Light load test (5 users, moderate thresholds)
+cd gatling-maven && mvn gatling:test \
+  -Dgatling.simulationClass=co.tyrell.gatling.simulation.ApiBenchmarkSimulationWithOAuth \
+  -Dgatling.users=5 \
+  -Dload.ramp.up.duration=10 \
+  -Dload.steady.state.duration=20 \
+  -Dperformance.max.response.time=3000 \
+  -Dperformance.success.rate.threshold=85.0
+```
+
+### Production-Like Tests
+```bash
+# Standard load test (50 users, realistic thresholds)
+cd gatling-maven && mvn gatling:test \
+  -Dgatling.simulationClass=co.tyrell.gatling.simulation.ApiBenchmarkSimulationWithOAuth \
+  -Dgatling.users=50 \
+  -Dload.ramp.up.duration=30 \
+  -Dload.steady.state.duration=60 \
+  -Dperformance.max.response.time=1000 \
+  -Dperformance.success.rate.threshold=95.0
+
+# High load stress test (500 users, default configuration)
+cd gatling-maven && mvn gatling:test \
+  -Dgatling.simulationClass=co.tyrell.gatling.simulation.ApiBenchmarkSimulationWithOAuth
+```
+
+### Basic Simulation Tests
+```bash
+# Basic simulation without OAuth (faster for API validation)
+cd gatling-maven && mvn gatling:test \
+  -Dgatling.simulationClass=co.tyrell.gatling.simulation.ApiBenchmarkSimulation \
+  -Dgatling.users=10 \
+  -Dload.ramp.up.duration=10
+
+# Custom API endpoint testing
+cd gatling-maven && mvn gatling:test \
+  -Dgatling.simulationClass=co.tyrell.gatling.simulation.ApiBenchmarkSimulation \
+  -Dapi.base.url=https://staging-api.example.com \
+  -Dapi.brand=STAGING \
+  -Dgatling.users=20
+```
+
+## 📈 Performance Monitoring
+
+### NFR Assertions
+The suite includes comprehensive NFR validation:
+
+| Metric | Global Threshold | OAuth Threshold |
+|--------|------------------|-----------------|
+| Max Response Time | < 1000ms | < 1500ms |
+| Mean Response Time | < 500ms | < 500ms |
+| 95th Percentile | < 800ms | < 800ms |
+| Success Rate | > 99% | > 95% |
+| Throughput | > 10 req/sec | > 10 req/sec |
+
+### Real-Time Monitoring
+During test execution, you'll see:
+- Live request counters
+- Response time percentiles  
+- Error rate tracking
+- Throughput measurements
+- Load pattern progression
+
+## 🔧 Configuration File
+
+### gatling-simulation.properties
+Complete configuration reference:
+
+```properties
+# API Configuration
+api.base.url=http://localhost:5050
+api.brand=AAMI
+api.customer.search.limit=5
+
+# OAuth Configuration
+oauth.enabled=true
+oauth.client.id=demo-client-id
+oauth.client.secret=demo-client-secret
+oauth.scope=customer:read customer:write vulnerability:read vulnerability:write
+oauth.token.endpoint=http://localhost:5050/oauth/token
+
+# Performance Thresholds
+performance.max.response.time=1000
+performance.mean.response.time=500
+performance.percentile.95.response.time=800
+performance.oauth.max.response.time=1500
+performance.success.rate.threshold=99.0
+performance.oauth.success.rate.threshold=95.0
+performance.min.throughput=10.0
+
+# Load Testing Configuration
+gatling.users=500
+load.ramp.up.duration=60
+load.steady.state.duration=120
+load.users.per.second=50
+load.health.check.users.per.second=5
+load.public.api.users.per.second=10
+load.total.duration=180
+
+# Sample Data Configuration
+api.customer.sample.email.domain=example.com
+api.customer.sample.phone.country.code=+61
+api.customer.sample.phone.prefix=04
+```
+
+## 🏗️ Implementation Details
+
+### OAuth 2.0 Implementation
+- **Grant Types**: Client Credentials, Password  
+- **Token Management**: Automatic caching and refresh
+- **Scope Support**: Granular permission testing
+- **Error Handling**: Comprehensive OAuth error scenarios
+
+### API Endpoints (Fictional)
+The test server provides a complete Customer API v3.0.0 simulation:
+
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/api/health` | GET | Health check |
+| `/oauth/token` | POST | OAuth token generation |
+| `/v3/brands/{brand}/customers` | GET | Search customers |
+| `/v3/brands/{brand}/customers` | POST | Create customer |
+| `/v3/brands/{brand}/customers/{id}` | GET | Get customer details |
+| `/v3/brands/{brand}/customers/{id}` | PATCH | Update customer |
+| `/v3/brands/{brand}/customers/{id}/vulnerabilities` | GET | Get vulnerabilities |
+| `/v3/brands/{brand}/customers/lifecycle` | POST | Lifecycle operations |
+
+### Performance Patterns
+- **Ramp-up Testing**: Gradual load increase
+- **Steady-State Testing**: Sustained load validation  
+- **Multi-Scenario Testing**: Concurrent load patterns
+- **Endpoint-Specific Assertions**: Targeted NFR validation
+
+## 🐛 Troubleshooting
+
+### Common Issues
+
+| Issue | Symptom | Solution |
+|-------|---------|----------|
+| **API Server Not Running** | Connection refused errors | Start: `cd api && python app.py` |
+| **Port Already in Use** | Address already in use | Change port in `app.py` or kill process |
+| **OAuth Token Errors** | 401 Unauthorized | Check OAuth configuration in properties file |
+| **Java Version Issues** | Compilation errors | Use Java 11+ or Java 21 LTS |
+| **Maven Errors** | Build failures | Run `mvn clean compile test-compile` |
+| **Configuration Not Found** | FileNotFoundException | Ensure `gatling-simulation.properties` exists |
+
+### Understanding Test Results
+
+#### ✅ Successful Test Indicators
+```bash
+# Look for these in test output:
+> jsonPath($.data.id).find.is(#{customerId}), found 123456789    # Customer ID extraction working
+Global: percentage of successful events is greater than 85.0 : true
+Global: mean requests per second is greater than 10.0 : true
+OAuth Token: percentage of successful events is greater than 95.0 : true
+```
+
+#### ⚠️ Performance Issues (Expected with Test Server)
+```bash
+# These are normal when testing against local Python server:
+Global: max of response time is less than 1000.0 : false (actual : 8775.0)
+Global: percentage of successful events is greater than 99.0 : false (actual : 58.6%)
+```
+
+**Note**: NFR assertion failures indicate the Python test server is being overwhelmed under load, which validates that your load testing is working correctly! Reduce user count or relax thresholds for functional validation.
+
+#### 🔍 Functional Validation vs Performance Testing
+```bash
+# For functional validation (ensure OAuth + endpoints work):
+-Dgatling.users=2-5
+-Dperformance.success.rate.threshold=50.0-85.0
+
+# For performance testing (stress test your real API):
+-Dgatling.users=50-500
+-Dperformance.success.rate.threshold=95.0-99.0
+-Dapi.base.url=https://your-production-api.com
+```
+
+### Debug Mode
+```bash
+# Enable verbose logging
+mvn gatling:test -X -Dgatling.simulationClass=...
+
+# Check configuration loading
+mvn gatling:test -Dlogback.level=DEBUG
+```
+
+## 🤝 Contributing
+
+This is a demonstration project. Key areas for enhancement:
+- Additional OAuth grant type implementations
+- More complex load testing scenarios  
+- CI/CD pipeline integration examples
+- Additional API endpoint simulations
+
+## 📝 License
+
+This project is for educational and demonstration purposes.
+
+## 🔗 Related Documentation
+
+- **Detailed Configuration**: See all available properties and usage examples
+- **OAuth Implementation**: Deep dive into OAuth 2.0 patterns and token management  
+- **Performance Testing**: Best practices for enterprise load testing with Gatling
+
+---
+
+**Remember**: This entire project uses fictional data and APIs. All customer information, business logic, and API endpoints are completely fabricated for testing and educational purposes only.

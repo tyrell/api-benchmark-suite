@@ -90,14 +90,13 @@ echo "  2. test-client / test-secret (scopes: api:read)"
 echo
 echo "Endpoints:"
 echo "  Public:"
-echo "    GET  /api/health        - Health check"
-echo "    GET  /api/hello         - Public hello"
-echo "    POST /oauth/token       - OAuth token endpoint"
+echo "    GET  /api/health                           - Health check"
+echo "    GET  /v3/brands/{brand}/customers          - Customer search (public)"
+echo "    POST /oauth/token                          - OAuth token endpoint"
 echo "  Protected (OAuth required):"
-echo "    GET  /api/hello/protected         - Protected hello"
-echo "    GET  /api/customers               - List customers"
-echo "    POST /api/customers               - Create customer (write scope)"
-echo "    GET  /api/customers/{id}          - Get customer"
+echo "    GET  /v3/brands/{brand}/customers          - List customers with OAuth"
+echo "    POST /v3/brands/{brand}/customers          - Create customer (write scope)"
+echo "    GET  /v3/brands/{brand}/customers/{id}     - Get customer details"
 echo "    PUT  /api/customers/{id}          - Update customer (write scope)"
 echo "    DELETE /api/customers/{id}        - Delete customer (write scope)"
 echo "    GET  /api/cev-events              - List CEV events"
@@ -123,7 +122,7 @@ cd "$PROJECT_DIR/gatling-maven"
 
 # Show current OAuth configuration
 echo "OAuth Configuration:"
-grep -E "^oauth\." src/test/resources/oauth-config.properties || echo "No OAuth configuration found"
+grep -E "^oauth\." src/test/resources/gatling-simulation.properties || echo "No OAuth configuration found"
 echo
 
 # Run the OAuth-enabled Gatling test
@@ -148,7 +147,7 @@ echo "🎉 Demo completed!"
 echo
 echo "Next steps:"
 echo "  1. Review the performance test results in your browser"
-echo "  2. Modify oauth-config.properties to test different configurations"
+echo "  2. Modify gatling-simulation.properties to test different configurations"
 echo "  3. Run additional scenarios with: ./scripts/run-oauth-comprehensive.sh"
 echo "  4. Customize the API endpoints in the simulation files"
 echo

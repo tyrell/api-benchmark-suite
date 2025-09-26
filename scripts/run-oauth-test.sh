@@ -9,7 +9,7 @@ set -e
 SIMULATION_CLASS="co.tyrell.gatling.simulation.ApiBenchmarkSimulationWithOAuth"
 OAUTH_ENABLED="false"
 BASE_URL="http://localhost:5050"
-ENDPOINT="/api/hello"
+ENDPOINT="/v3/brands/AAMI/customers"
 USERS="500"
 
 # Colors for output
@@ -27,7 +27,7 @@ print_usage() {
     echo "  -h, --help                 Show this help message"
     echo "  -s, --simulation CLASS     Simulation class to run (default: ApiBenchmarkSimulationWithOAuth)"
     echo "  -u, --url URL             Base URL of the API (default: http://localhost:5050)"
-    echo "  -e, --endpoint PATH       API endpoint to test (default: /api/hello)"
+    echo "  -e, --endpoint PATH       API endpoint to test (default: /v3/brands/AAMI/customers)"
     echo "  --users COUNT             Number of virtual users (default: 500)"
     echo ""
     echo "OAuth Options:"
