@@ -424,6 +424,10 @@ This is a demonstration project. Key areas for enhancement:
 
 ## 📝 License
 
+This project is licensed under the MIT License.
+
+**Original Author**: [Tyrell Perera](https://tyrell.co)
+
 This project is for educational and demonstration purposes.
 
 ## 🔗 Related Documentation
