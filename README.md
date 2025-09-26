@@ -51,6 +51,33 @@ api-benchmark-suite/
 └── README.md                                  # This documentation
 ```
 
+## ⚡ Fast Reset Strategy (AWS-first)
+
+The suite supports pre-test environment resets using storage-level snapshots for near O(1) resets with large datasets.
+
+ASCII high-level flow:
+
+```
+[Golden snapshot/ARN]
+          |
+          v
+[aws-reset-db.sh --method {aurora|rds|ebs|eks}]
+          |
+          v
+[Reset ready: endpoint/volumes (JSON)]
+          |
+          v
+[run-gatling-with-aws-reset.sh -- ...]
+          |
+          v
+[Gatling run]
+          |
+          v
+[Cleanup resources]
+```
+
+Quick tips:
+
 ## 🚀 Quick Start
 
 ### 1. Prerequisites
@@ -385,36 +412,6 @@ The test server provides a complete Customer API v3.0.0 simulation:
 - **Steady-State Testing**: Sustained load validation  
 - **Multi-Scenario Testing**: Concurrent load patterns
 - **Endpoint-Specific Assertions**: Targeted NFR validation
-
-## ⚡ Fast Reset Strategy (AWS-first)
-
-The suite supports pre-test environment resets using storage-level snapshots for near O(1) resets with large datasets.
-
-ASCII high-level flow:
-
-```
-[Golden snapshot/ARN]
-          |
-          v
-[aws-reset-db.sh --method {aurora|rds|ebs|eks}]
-          |
-          v
-[Reset ready: endpoint/volumes (JSON)]
-          |
-          v
-[run-gatling-with-aws-reset.sh -- ...]
-          |
-          v
-[Gatling run]
-          |
-          v
-[Cleanup resources]
-```
-
-Quick tips:
-- Prefer Aurora cluster clones for fastest copy-on-write resets when on Aurora.
-- Use Route 53 or RDS Proxy to decouple endpoint flips if needed.
-- For EKS, ensure EBS CSI and VolumeSnapshot CRDs are installed and ready.
 
 ## 🐛 Troubleshooting
 
