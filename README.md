@@ -17,6 +17,8 @@ A comprehensive performance testing suite demonstrating enterprise-grade load te
 - **Enterprise NFR Validation** with comprehensive assertions
 - **CI/CD Integration** ready configurations
 
+> **🚀 New to the project?** Check out our [Team Quick Start Guide](docs/TEAM_QUICK_START.md) for a streamlined introduction to testing business-critical APIs with this suite.
+
 ## 🏗️ Architecture
 
 ```
