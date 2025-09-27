@@ -41,32 +41,39 @@
 
 ```
 kyber/
-├── api/                                       # Python Flask test server
-│   ├── app.py                                 # A fictional API mock server
-│   ├── requirements.txt                       # Python dependencies
-│   └── run-api.sh                             # API server startup script
-├── docs/                                      # Project documentation
-│   └── TEAM_QUICK_START.md                    # Team onboarding guide
-├── gatling-maven/                             # Gatling performance tests
-│   ├── pom.xml                                # Maven project configuration
-│   ├── src/test/java/co/tyrell/gatling/       # Java test implementations
-│   │   ├── auth/                              # OAuth 2.0 authentication classes
-│   │   └── simulation/                        # Performance test scenarios
-│   ├── src/test/resources/                    # Configuration files
-│   │   ├── gatling-simulation.properties      # Test configuration parameters
-│   │   ├── gatling.conf                       # Gatling framework settings
-│   │   └── logback-test.xml                   # Logging configuration
-│   └── target/                                # Maven build outputs & test reports
-├── scripts/                                   # Test automation scripts
-│   ├── oauth-demo.sh                          # OAuth demonstration script
-│   ├── run-oauth-test.sh                      # OAuth-enabled test runner
-│   ├── run-standard-test.sh                   # Standard test runner
-│   ├── run-with-java21.sh                     # Java 21 specific test runner
-│   └── test-oauth-api.sh                      # API validation script
-├── .gitignore                                 # Git ignore patterns
-├── .venv/                                     # Python virtual environment
-├── LICENSE                                    # Project license
-└── README.md                                  # This documentation
+├── api/                                              # Python Flask test server
+│   ├── app.py                                        # A fictional API mock server
+│   ├── requirements.txt                              # Python dependencies
+│   └── run-api.sh                                    # API server startup script
+├── assets/                                           # Project assets
+│   └── kyber.jpeg                                    # Project logo/banner image
+├── docs/                                             # Project documentation
+│   ├── FAST_DB_RESET_SNAPSHOT.md                     # AWS snapshot reset documentation
+│   └── TEAM_QUICK_START.md                           # Team onboarding guide
+├── gatling-maven/                                    # Gatling performance tests
+│   ├── pom.xml                                       # Maven project configuration
+│   ├── src/test/java/co/tyrell/gatling/              # Java test implementations
+│   │   ├── auth/                                     # OAuth 2.0 authentication classes
+│   │   │   ├── OAuthConfig.java                      # OAuth configuration
+│   │   │   └── OAuthTokenManager.java                # Token management
+│   │   └── simulation/                               # Performance test scenarios
+│   │       ├── ApiBenchmarkSimulation.java           # Basic performance tests
+│   │       └── ApiBenchmarkSimulationWithOAuth.java  # OAuth-enabled tests
+│   └── src/test/resources/                           # Configuration files
+│       ├── gatling-simulation.properties             # Test configuration parameters
+│       ├── gatling.conf                              # Gatling framework settings
+│       └── logback-test.xml                          # Logging configuration
+├── scripts/                                          # Test automation scripts
+│   ├── aws-reset-db.sh                               # AWS database reset script
+│   ├── oauth-demo.sh                                 # OAuth demonstration script
+│   ├── run-gatling-with-aws-reset.sh                 # Gatling with AWS reset
+│   ├── run-oauth-test.sh                             # OAuth-enabled test runner
+│   ├── run-standard-test.sh                          # Standard test runner
+│   ├── run-with-java21.sh                            # Java 21 specific test runner
+│   └── test-oauth-api.sh                             # API validation script
+├── .gitignore                                        # Git ignore patterns
+├── LICENSE                                           # Project license
+└── README.md                                         # This documentation
 ```
 
 ## ⚡ Fast Reset Strategy (AWS-first)
