@@ -18,7 +18,7 @@ A comprehensive performance testing suite demonstrating enterprise-grade load te
 ```
 api-benchmark-suite/
 ├── api/                                       # Python Flask test server
-│   ├── app.py                                 # Customer API v3.0.0 mock server
+│   ├── app.py                                 # A fictional API mock server
 │   ├── requirements.txt                       # Python dependencies
 │   └── run-api.sh                             # API server startup script
 ├── docs/                                      # Project documentation
