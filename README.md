@@ -9,6 +9,7 @@ A comprehensive performance testing suite demonstrating enterprise-grade load te
 - **Configurable Performance Testing** with externalized properties
 - **RESTful API Testing** patterns and best practices
 - **Enterprise NFR Validation** with comprehensive assertions
+- **AWS-First Reset Strategy** with snapshot-based environment resets for large datasets
 - **CI/CD Integration** ready configurations
 
 > **🚀 New to the project?** Check out our [Team Quick Start Guide](docs/TEAM_QUICK_START.md) for a streamlined introduction to testing business-critical APIs with this suite.
