@@ -1,6 +1,8 @@
 # Kyber
 ### API Performance Testing Suite
 
+> **About the Name**: Kyber crystals power the lightsabers in Star Wars - they're the core energy source that makes the weapon effective. Similarly, Kyber is the core performance testing framework that powers your API reliability and scalability efforts.
+
 ## 🎯 Overview
 
 **Kyber** is a comprehensive performance testing suite demonstrating enterprise-grade load testing with **Gatling**, **OAuth 2.0 authentication**, and modern API testing patterns. This project serves as a complete reference implementation for:
