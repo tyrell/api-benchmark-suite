@@ -494,7 +494,7 @@ This is a demonstration project. Key areas for enhancement:
 
 ## 📝 License
 
-This project is licensed under the MIT License.
+This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details.
 
 **Original Author**: [Tyrell Perera](https://tyrell.co)
 
