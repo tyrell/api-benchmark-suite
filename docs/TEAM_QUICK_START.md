@@ -1,4 +1,4 @@
-# API Performance Testing - Quick Start for Dev Team
+# Kyber - Quick Start for Dev Teams
 
 ## What This Does
 This tool automatically tests your **business-critical API endpoints** for performance and reliability - the kind of testing that catches issues before they hit production. Since your APIs are OAuth-protected, the tool handles authentication automatically so you can focus on testing what matters:
@@ -18,8 +18,8 @@ Before deploying to production, we need to know if our critical business endpoin
 
 ### 1. Clone and Configure
 ```bash
-git clone https://github.com/tyrell/api-benchmark-suite.git
-cd api-benchmark-suite/gatling-maven
+git clone https://github.com/tyrell/kyber.git
+cd kyber/gatling-maven
 ```
 
 ### 2. Configure for Your API Environment
