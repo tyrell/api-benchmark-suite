@@ -81,7 +81,7 @@ The suite supports pre-test environment resets using storage-level snapshots for
 │            │                                                                    │
 │            ▼                                                                    │
 │  ┌─────────────────────────┐                                                    │
-│  │   Gatling Execution     │ ◄── Performance testing against clean data         │
+│  │   Gatling Execution     │ ◄── Performance testing against cloned data        │
 │  │   (Load Testing)        │                                                    │
 │  └─────────┬───────────────┘                                                    │
 │            │                                                                    │
