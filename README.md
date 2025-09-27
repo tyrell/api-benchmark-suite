@@ -5,6 +5,24 @@
 
 > **About the Name**: Kyber crystals power the lightsabers in Star Wars - they're the core energy source that makes the weapon effective. Similarly, Kyber is the core performance testing framework that powers your API reliability and scalability efforts.
 
+## 📑 Table of Contents
+- [🎯 Overview](#-overview)
+- [🏗️ Architecture](#️-architecture)
+- [⚡ Fast Reset Strategy (AWS-first)](#-fast-reset-strategy-aws-first)
+- [🚀 Gatling Quick Start](#-gatling-quick-start-using-the-included-api-stub)
+- [📊 Test Scenarios](#-test-scenarios)
+- [⚙️ Configuration](#️-configuration)
+- [🎛️ Advanced Usage](#️-advanced-usage)
+- [🧪 Testing Scripts](#-testing-scripts)
+- [🎯 Example Test Commands](#-example-test-commands)
+- [📈 Performance Monitoring](#-performance-monitoring)
+- [🔧 Configuration File](#-configuration-file)
+- [🏗️ Implementation Details](#️-implementation-details)
+- [🐛 Troubleshooting](#-troubleshooting)
+- [🤝 Contributing](#-contributing)
+- [📝 License](#-license)
+- [🔗 Related Documentation](#-related-documentation)
+
 ## 🎯 Overview
 
 **Kyber** is a comprehensive performance testing suite demonstrating enterprise-grade load testing with **Gatling**, **OAuth 2.0 authentication**, and modern API testing patterns. This project serves as a complete reference implementation for:
