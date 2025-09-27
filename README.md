@@ -78,7 +78,9 @@ kyber/
 
 ## ⚡ Fast Reset Strategy (AWS-first)
 
-The suite supports pre-test environment resets using storage-level snapshots for near O(1) resets with large datasets.
+The suite supports pre-test environment resets using storage-level snapshots for near O(1) resets with large datasets. This approach is particularly valuable for performance testing scenarios where you need to reset large databases or persistent volumes quickly between test runs.
+
+> 📚 **Detailed Documentation**: For comprehensive implementation details, configuration options, and step-by-step setup instructions, see [Fast DB Reset via AWS Snapshots](docs/FAST_DB_RESET_SNAPSHOT.md).
 
 **High-level workflow:**
 
