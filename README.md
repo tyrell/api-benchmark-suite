@@ -1,8 +1,9 @@
-# API Performance Benchmark Suite
+# Kyber
+### API Performance Testing Suite
 
 ## 🎯 Overview
 
-A comprehensive performance testing suite demonstrating enterprise-grade load testing with **Gatling**, **OAuth 2.0 authentication**, and modern API testing patterns. This project serves as a complete reference implementation for:
+**Kyber** is a comprehensive performance testing suite demonstrating enterprise-grade load testing with **Gatling**, **OAuth 2.0 authentication**, and modern API testing patterns. This project serves as a complete reference implementation for:
 
 - **High-Performance Load Testing** with Gatling Java DSL
 - **OAuth 2.0 Client Credentials** flow implementation  
@@ -17,7 +18,7 @@ A comprehensive performance testing suite demonstrating enterprise-grade load te
 ## 🏗️ Architecture
 
 ```
-api-benchmark-suite/
+kyber/
 ├── api/                                       # Python Flask test server
 │   ├── app.py                                 # A fictional API mock server
 │   ├── requirements.txt                       # Python dependencies
