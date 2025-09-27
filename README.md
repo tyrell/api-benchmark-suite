@@ -385,8 +385,8 @@ api.customer.sample.phone.prefix=04
 - **Scope Support**: Granular permission testing
 - **Error Handling**: Comprehensive OAuth error scenarios
 
-### API Endpoints (Fictional)
-The test server provides a complete Customer API v3.0.0 simulation:
+### API Endpoints
+The test server provides a fictional Customer API simulation:
 
 | Endpoint | Method | Description |
 |----------|--------|-------------|
