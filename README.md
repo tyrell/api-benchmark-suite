@@ -180,28 +180,28 @@ gatling-maven/target/gatling/[simulation-timestamp]/index.html
 
 The Gatling reports provide comprehensive performance analytics with interactive charts and detailed metrics. Here's what you can expect to see:
 
-**📊 Executive Summary Dashboard**
+**✅ Test Assertions Summary Dashboard**
 ![Gatling Report Overview](assets/samples/kyber-run-00.png)
 
-**📈 Response Time Distribution**
+**� Response Time Distribution**
 ![Response Time Charts](assets/samples/kyber-run-01.png)
 
-**⚡ Active Users Over Time**
+**⚠️ Error Analysis Dashboard**
 ![Active Users Timeline](assets/samples/kyber-run-02.png)
 
-**🎯 Response Time Percentiles**
+**👥 Number of Active Users Over Time**
 ![Response Time Percentiles](assets/samples/kyber-run-03.png)
 
-**📋 Detailed Request Statistics**
+**� Number of Concurrent Users**
 ![Request Statistics Table](assets/samples/kyber-run-04.png)
 
-**🔍 Individual Request Analysis**
+**🎯 Response Time Percentiles**
 ![Request Details](assets/samples/kyber-run-05.png)
 
-**📊 Performance Metrics Breakdown**
+**� Requests Per Second Throughput**
 ![Metrics Breakdown](assets/samples/kyber-run-06.png)
 
-**⚠️ Error Analysis Dashboard**
+**📉 Responses Per Second Analysis**
 ![Error Analysis](assets/samples/kyber-run-07.png)
 
 > 💡 **Tip**: These reports are fully interactive - click on any chart element to drill down into specific time ranges or request types. Use the navigation tabs to explore different aspects of your performance test results.
