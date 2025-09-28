@@ -566,5 +566,6 @@ This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENS
 
 ## 🔗 Related Documentation
 
-- Team Quick Start Guide: docs/TEAM_QUICK_START.md
-- Fast DB Reset via AWS Snapshots: docs/FAST_DB_RESET_SNAPSHOT.md
+- Team Quick Start Guide: [docs/TEAM_QUICK_START.md](docs/TEAM_QUICK_START.md)
+- Fast DB Reset via AWS Snapshots: [docs/FAST_DB_RESET_SNAPSHOT.md](docs/FAST_DB_RESET_SNAPSHOT.md)
+- Competitive Analysis & Market positioning: [docs/COMPETITIVE_ANALYSIS.md](docs/COMPETITIVE_ANALYSIS.md)
