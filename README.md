@@ -84,47 +84,24 @@ The suite supports pre-test environment resets using storage-level snapshots for
 
 **High-level workflow:**
 
-```
-┌─────────────────────────────────────────────────────────────────────────────────┐
-│                          AWS Snapshot-Based Reset Flow                          │
-├─────────────────────────────────────────────────────────────────────────────────┤
-│                                                                                 │
-│  ┌─────────────────────────┐                                                    │
-│  │   Golden Source Data    │ ◄── Baseline snapshots, cluster ARNs               │
-│  │   (Snapshot/Cluster)    │                                                    │
-│  └─────────┬───────────────┘                                                    │
-│            │                                                                    │
-│            ▼                                                                    │
-│  ┌─────────────────────────┐                                                    │
-│  │   aws-reset-db.sh       │ ◄── Provision method: aurora|rds|ebs|eks           │
-│  │   --method <type>       │                                                    │
-│  └─────────┬───────────────┘                                                    │
-│            │                                                                    │
-│            ▼                                                                    │
-│  ┌─────────────────────────┐                                                    │
-│  │   Fresh Environment     │ ◄── Endpoints/volumes ready (JSON output)          │
-│  │   Ready (seconds)       │                                                    │
-│  └─────────┬───────────────┘                                                    │
-│            │                                                                    │
-│            ▼                                                                    │
-│  ┌─────────────────────────┐                                                    │
-│  │   Orchestrator          │ ◄── run-gatling-with-aws-reset.sh                  │
-│  │   (Export endpoint)     │                                                    │
-│  └─────────┬───────────────┘                                                    │
-│            │                                                                    │
-│            ▼                                                                    │
-│  ┌─────────────────────────┐                                                    │
-│  │   Gatling Execution     │ ◄── Performance testing against cloned data        │
-│  │   (Load Testing)        │                                                    │
-│  └─────────┬───────────────┘                                                    │
-│            │                                                                    │
-│            ▼                                                                    │
-│  ┌─────────────────────────┐                                                    │
-│  │   Automatic Cleanup     │ ◄── Remove temporary resources                     │
-│  │   (Cost Optimization)   │                                                    │
-│  └─────────────────────────┘                                                    │
-│                                                                                 │
-└─────────────────────────────────────────────────────────────────────────────────┘
+```mermaid
+flowchart TD
+    A[🗄️ Golden Source Data<br/>Baseline snapshots, cluster ARNs] --> B[⚙️ aws-reset-db.sh<br/>--method aurora|rds|ebs|eks]
+    B --> C[🚀 Fresh Environment Ready<br/>Endpoints/volumes ready<br/>JSON output]
+    C --> D[🎯 Orchestrator<br/>run-gatling-with-aws-reset.sh<br/>Export endpoint as RESET_DB_ENDPOINT]
+    D --> E[📈 Gatling Execution<br/>Performance testing against<br/>cloned data]
+    E --> F[🧹 Automatic Cleanup<br/>Remove temporary resources<br/>Cost optimization]
+    
+    %% Styling
+    classDef processBox fill:#e1f5fe,stroke:#01579b,stroke-width:2px
+    classDef dataBox fill:#f3e5f5,stroke:#4a148c,stroke-width:2px
+    classDef testBox fill:#e8f5e8,stroke:#1b5e20,stroke-width:2px
+    classDef cleanupBox fill:#fff3e0,stroke:#e65100,stroke-width:2px
+    
+    class A dataBox
+    class B,C,D processBox
+    class E testBox
+    class F cleanupBox
 ```
 
 ## 🚀 Gatling Quick Start (using the included API Stub)
