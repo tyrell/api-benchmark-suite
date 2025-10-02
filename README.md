@@ -93,10 +93,10 @@ flowchart TD
     E --> F[🧹 Automatic Cleanup<br/>Remove temporary resources<br/>Cost optimization]
     
     %% Styling
-    classDef processBox fill:#e1f5fe,stroke:#01579b,stroke-width:2px
-    classDef dataBox fill:#f3e5f5,stroke:#4a148c,stroke-width:2px
-    classDef testBox fill:#e8f5e8,stroke:#1b5e20,stroke-width:2px
-    classDef cleanupBox fill:#fff3e0,stroke:#e65100,stroke-width:2px
+    classDef processBox fill:#e1f5fe,stroke:#01579b,stroke-width:2px,color:#000000
+    classDef dataBox fill:#f3e5f5,stroke:#4a148c,stroke-width:2px,color:#000000
+    classDef testBox fill:#e8f5e8,stroke:#1b5e20,stroke-width:2px,color:#000000
+    classDef cleanupBox fill:#fff3e0,stroke:#e65100,stroke-width:2px,color:#000000
     
     class A dataBox
     class B,C,D processBox
