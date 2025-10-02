@@ -86,7 +86,7 @@ The suite supports pre-test environment resets using storage-level snapshots for
 
 ```mermaid
 flowchart TD
-    A[🗄️ Golden Source Data<br/>Baseline snapshots, cluster ARNs] --> B[⚙️ aws-reset-db.sh<br/>--method aurora|rds|ebs|eks]
+    A[🗄️ Golden Source Data<br/>Baseline snapshots, cluster ARNs] --> B[⚙️ aws-reset-db.sh<br/>--method aurora/rds/ebs/eks]
     B --> C[🚀 Fresh Environment Ready<br/>Endpoints/volumes ready<br/>JSON output]
     C --> D[🎯 Orchestrator<br/>run-gatling-with-aws-reset.sh<br/>Export endpoint as RESET_DB_ENDPOINT]
     D --> E[📈 Gatling Execution<br/>Performance testing against<br/>cloned data]
